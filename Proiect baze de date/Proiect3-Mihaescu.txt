@@ -1,0 +1,141 @@
+set autocommit on;
+set serveroutput on; 
+set linesize 500;
+a)b)
+
+create table mijloace(
+nr_inventar integer primary key check(nr_inventar<10000),
+descriere char(50) not null,
+valoare_initiala integer check(valoare_initiala<1000000) not null,
+data_punerii_serviciu  date not null ,
+depreciere_speciala      integer check(depreciere_speciala<1000000) not null,
+baza_depreciere   integer check(baza_depreciere<1000000),
+metoda_depreciere  varchar(30) not null,  
+nr_ani        number(2) check(nr_ani<50) not null
+);
+
+create table depreciere(
+nr_inventar integer not null references mijloace(nr_inventar) on delete cascade,                                                                                                                           
+an            date not null ,                
+depreciere_anterioara       integer check(depreciere_anterioara <1000000) not null,                           
+depreciere_curenta         integer check(depreciere_curenta<1000000) not null);
+
+create or replace trigger ver1 
+ before insert on depreciere
+for each row
+ declare
+aux integer;
+aux1 integer;
+ begin
+ select count(*)into aux from depreciere where trunc(an,'yyyy')=trunc(:new.an,'yyyy')and :new.nr_inventar=nr_inventar;
+ if(aux>0) then
+raise_application_error(-20000, 'Se repeta data!');
+end if;
+ end;
+ /
+c)insert into mijloace(nr_inventar,descriere,valoare_initiala,data_punerii_serviciu,depreciere_speciala,metoda_depreciere,nr_ani) values(1,'birou',120,'8-apr-2016',20,'liniara',15);    //exemplu fara baza de depreciere introdusa                                                    
+insert into mijloace values(2,'scuter',3500,'8-dec-2000',200,3300,'acelerata',5);      //exemplu cu baza de depreciere introdusa
+insert into mijloace values(3,'atv',1000009,'8-dec-2000',200,3300,'acelerata',8);      // pentru a verifica constrangere ca valoarea initiala sa fie mai mica ca 1000000)
+
+insert into depreciere values(2,'6-mar-2001',0,200);
+insert into depreciere values(2,'8-dec-2001',200,300);// pentru verifica ca nu avem voia sa introducem 2 deprecieri in acelasi an
+d)create or replace trigger tr1
+before insert on mijloace
+for each row
+
+declare
+begin
+:new.baza_depreciere:=:new.valoare_initiala-:new.depreciere_speciala;
+
+end;
+/          
+
+
+
+insert into mijloace(nr_inventar,descriere,valoare_initiala,data_punerii_serviciu,depreciere_speciala,metoda_depreciere,nr_ani) values(3,'televizor',3120,'8-ian-2002',200,'liniara',6);
+
+
+
+
+
+e)
+create or replace procedure pr1(anp date ,nr_inventarp integer)
+as
+
+d_c integer;
+d_a integer;
+bd integer;
+nr_anip integer;
+dt date;
+auxnume varchar(30);
+
+begin
+ 
+select data_punerii_serviciu into dt from mijloace WHERE nr_inventar=nr_inventarp ;
+select baza_depreciere into bd from mijloace WHERE nr_inventar=nr_inventarp ;
+select nr_ani into nr_anip from mijloace WHERE nr_inventar=nr_inventarp ;
+if((anp-dt)/365>nr_anip) then
+ raise_application_error(-20000, 'Anul nu se afla in perioada de depreciere!!!'); 
+end if;
+select sum(depreciere_curenta) into d_a from depreciere WHERE nr_inventar=nr_inventarp and an <anp;
+ 
+select metoda_depreciere into auxnume from mijloace WHERE nr_inventar=nr_inventarp ;
+if(auxnume='liniara') then
+    d_c:=bd/nr_anip;
+
+  end if;
+if(auxnume='acelerata') then
+    d_c:=(bd- nvl(d_a,0))*2/nr_anip;  
+
+end if;
+
+ insert into depreciere values(nr_inventarp,anp,nvl(d_a,0),d_c);
+      
+end;
+/
+
+exec pr1('6-mar-2002',2);
+exec pr1('6-mar-2004',2);
+exec pr1('6-mar-2003',3);
+exec pr1('6-mar-2006',3);
+exec pr1('6-mar-2004',3);
+exec pr1('6-mar-2012',3);//eroare incat incalca perioada de depreciere
+exec pr1('18-dec-2003',3);//eroare incat nu avem voia sa introducem 2 deprecieri in acelasi an
+
+f)
+select A.nr_inventar, descriere, data_punerii_serviciu, metoda_depreciere, nr_ani, depreciere_anterioara, depreciere_curenta
+        FROM mijloace A, depreciere B
+         where A.nr_inventar=B.nr_inventar(+)
+        ORDER BY metoda_depreciere,nr_ani, data_punerii_serviciu;
+
+
+
+g)
+select nr_inventar,descriere
+from mijloace 
+where (sysdate-data_punerii_serviciu)/365>nr_ani
+ORDER BY nr_inventar;
+
+
+
+
+h)
+insert into mijloace(nr_inventar,descriere,valoare_initiala,data_punerii_serviciu,depreciere_speciala,metoda_depreciere,nr_ani) values(4,'atv',5500,'8-ian-2012',500,'liniara',3);
+insert into mijloace(nr_inventar,descriere,valoare_initiala,data_punerii_serviciu,depreciere_speciala,metoda_depreciere,nr_ani) values(5,'mobila',8300,'12-mar-2016',800,'acelerata',10);
+insert into mijloace(nr_inventar,descriere,valoare_initiala,data_punerii_serviciu,depreciere_speciala,metoda_depreciere,nr_ani) values(6,'masina',18000,'22-aug-2000',1500,'acelerata',11);
+
+
+i)select A.nr_inventar, descriere, an, depreciere_anterioara, depreciere_curenta
+        FROM mijloace A, depreciere B
+         where A.nr_inventar=B.nr_inventar and descriere=’televizor’
+        ORDER BY A.nr_inventar,an;
+
+
+h)
+select  A.nr_inventar,sum(depreciere_curenta)  as depreciere_totala
+        FROM mijloace A, depreciere B
+         where A.nr_inventar=B.nr_inventar and metoda_depreciere='liniara'
+         Group BY A.nr_inventar;
+
+
+
