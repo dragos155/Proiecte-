@@ -1,0 +1,13 @@
+package grafica;
+ 
+ 
+ 
+public class MainAPP {
+ 
+    public static void main(String[] args) {
+        // TODO Auto-generated method stub
+        MyFrame frm = new MyFrame();
+        frm.setVisible(true);
+    }
+ 
+}

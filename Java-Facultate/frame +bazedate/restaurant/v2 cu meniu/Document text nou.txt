@@ -1,0 +1,90 @@
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.concurrent.Delayed;
+import java.util.concurrent.TimeUnit;
+
+public class MainApp {
+
+	public static void main(String[] args) throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException, IOException, InterruptedException {
+		// TODO Auto-generated method stub
+
+		BufferedReader flux_tastatura = new BufferedReader(new InputStreamReader (System.in));
+		
+		String url = "jdbc:mysql://localhost:3306/test2";
+		Class.forName("com.mysql.jdbc.Driver").newInstance();
+		Connection con = (Connection)DriverManager.getConnection(url,"root","root");
+		Statement sql = (Statement)con.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
+		ResultSet rs = sql.executeQuery("select * from destinatii");
+		
+		int optiune;
+		
+		do
+		{
+			System.out.println("\n1.Afisare baza de date");
+			System.out.println("2.Adaugare destinatie turistica");
+			System.out.println("3.Modificare numar obiective");
+			System.out.println("4.Iesire");
+			System.out.println("\nDati optiunea: ");
+			optiune = Integer.parseInt(flux_tastatura.readLine());
+			
+			switch(optiune)
+			{
+			case 1:
+				//afisare
+				rs.first();
+				do 
+				{
+					String tara = rs.getString("Tara");
+					String statiunea = rs.getString("Statiunea");
+					String nr_ob = rs.getString("Nr_Obiective");
+					
+					System.out.println(tara + ", " + statiunea + ", " + nr_ob);
+				 
+				}while (rs.next());
+				TimeUnit.SECONDS.sleep(4) ;
+				break;
+			case 2:
+				//adaugare
+				System.out.println("\nIntroduceti o noua destinatie turistica:");
+				String element = flux_tastatura.readLine();
+				String [] parts = element.split(", ");
+				String tara = parts[0];
+				String statiunea = parts[1];
+				String nr_ob = parts[2];
+				
+				rs.moveToInsertRow();
+				rs.updateString("Tara", parts[0]);
+				rs.updateString("Statiunea", parts[1]);
+				rs.updateInt("Nr_Obiective", Integer.parseInt(parts[2]));
+				rs.insertRow();
+				break;
+			case 3:
+				//actualizare nr_obiective
+				System.out.println("Dati statiunea: ");
+				String statiune = flux_tastatura.readLine();
+				System.out.println("Dati noul numar de obiective: ");
+				String nr = flux_tastatura.readLine();
+				
+				rs.first();
+				do 
+				{
+					if (rs.getString("Statiunea").equalsIgnoreCase(statiune))
+					{
+						rs.updateInt("Nr_Obiective", Integer.parseInt(nr));
+						rs.updateRow();
+					}	
+				}while (rs.next());
+				break;
+			case 4:
+				break;
+			}	
+		}while (optiune!=4);
+	}
+}

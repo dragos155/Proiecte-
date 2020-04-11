@@ -1,0 +1,130 @@
+package Pack1;
+
+import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.FlowLayout;
+import java.util.Comparator;
+import java.util.Vector;
+
+import javax.swing.BoxLayout;
+import javax.swing.DefaultListModel;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+
+class MyFrame extends JFrame
+{
+	private JTextField txtTitlu;
+	private JTextField txtAutor;
+	private JTextField txtAn;
+	private JButton btnAdaugare;
+	private JButton btnAfisare;
+	private JButton btnAfisareo;
+	DefaultListModel<String> myModel;
+	JList<String> myList;
+
+
+	public MyFrame()
+	{
+		super("Carti");
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setLocation(400,400);
+		setSize(470, 440);
+		getContentPane().setLayout(null);
+		JLabel lblTitlu=new JLabel("Titlu");
+		txtTitlu=new JTextField();
+		JLabel lblAutor=new JLabel("Autor");
+		txtAutor=new JTextField();
+		JLabel lblAn=new JLabel("An");
+		txtAn=new JTextField();
+		btnAdaugare=new JButton("Adaugare");
+		btnAfisare=new JButton("Afisare");
+		btnAfisareo=new JButton("Afisare ordonata");
+		myModel=new DefaultListModel<String>();
+		myList=new JList<String>();
+
+
+		lblTitlu.setBounds(20,10,70,20);
+		txtTitlu.setBounds(90, 10, 150, 20);
+		lblAutor.setBounds(20,40,70,20);
+		txtAutor.setBounds(90, 40, 150, 20);
+		lblAn.setBounds(20,70,70,20);
+		txtAn.setBounds(90, 70, 150, 20);
+		btnAdaugare.setBounds(20, 100, 100, 20);
+		btnAfisare.setBounds(140, 100, 100, 20);
+		btnAfisareo.setBounds(260, 100, 130, 20);
+		myList.setBounds(20,130, 360, 150);
+		getContentPane(). add(myList);
+		getContentPane().add(lblTitlu);
+		getContentPane().add(txtTitlu);
+		getContentPane().add(lblAutor);
+		getContentPane().add(txtAutor);
+		getContentPane().add(lblAn);
+		getContentPane().add(txtAn);
+		getContentPane().add(btnAdaugare);
+		getContentPane().add(btnAfisare);
+		getContentPane().add(btnAfisareo);
+		btnAdaugare.addActionListener(new ButonApasat());
+		btnAfisare.addActionListener(new ButonApasat());
+		btnAfisareo.addActionListener(new ButonApasat());
+		setVisible(true);
+
+
+	}      
+	Vector<Carte>carti = new Vector<>();
+	class ButonApasat implements ActionListener
+	{
+		public void actionPerformed(ActionEvent e) {
+			// TODO Auto-generated method stub
+			JButton source = (JButton) e.getSource();
+
+			if (source == btnAdaugare)
+			{
+				String titlu = txtTitlu.getText();
+				String autor = txtAutor.getText();
+				int an = Integer.parseInt(txtAn.getText());
+
+				Carte c = new Carte(titlu,autor,an);
+
+
+				carti.add(c);
+				System.out.println("Am reusit ");
+				txtTitlu.setText("");
+				txtAutor.setText("");
+				txtAn.setText("");
+			}
+			if (source == btnAfisare)
+			{myModel.clear();
+			for (int i=0; i<carti.size(); i++)
+			{
+
+				Carte cr = (Carte) carti.elementAt(i);
+				myModel.addElement(cr.toString());
+				myList.setModel(myModel);
+
+			}
+			}
+			if (source == btnAfisareo)
+			{
+				System.out.println("Am ajuns aici");
+				myModel.clear();
+				carti.sort(Comparator.comparing(Carte::getTitlu));
+				for (int i=0; i<carti.size(); i++)
+				{
+					
+					Carte cr = (Carte) carti.elementAt(i);
+					myModel.addElement(cr.toString());
+					myList.setModel(myModel);
+					
+				}
+			}
+		}
+		public DefaultListModel<String> getModel() {
+			return myModel;
+		}
+	}
+}
